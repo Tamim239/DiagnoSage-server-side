@@ -3,7 +3,7 @@ const app = express()
 require('dotenv').config()
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
+const { MongoClient, ServerApiVersion } = require('mongodb')
 const jwt = require('jsonwebtoken')
 const port = process.env.PORT || 5000
 
@@ -47,7 +47,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     
-    const roomsCollection = client.db('stayVista').collection('rooms');
+   
     // auth related api
     app.post('/jwt', async (req, res) => {
       const user = req.body
