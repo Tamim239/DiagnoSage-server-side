@@ -5,7 +5,6 @@ const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const jwt = require('jsonwebtoken')
-
 const port = process.env.PORT || 5000
 
 // middleware
@@ -62,7 +61,7 @@ async function run() {
           sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
         })
         .send({ success: true })
-    })
+    });
     // Logout
     app.get('/logout', async (req, res) => {
       try {
@@ -77,23 +76,8 @@ async function run() {
       } catch (err) {
         res.status(500).send(err)
       }
-    })
+    });
 
-    // get all rooms
-   app.get('/rooms', async(req, res)=>{
-    const category = req.query.category;
-    let query = {}
-    if(category && category !== 'null') query = {category}
-    const result = await roomsCollection.find(query).toArray();
-    res.send(result)
-   });
-  //  get rooms single data/room
-  app.get('/rooms/:id', async(req, res)=>{
-    const id = req.params.id;
-    const query = {_id: new ObjectId(id)};
-    const result = await roomsCollection.findOne(query)
-    res.send(result)
-   });
 
 
     // Send a ping to confirm a successful connection
