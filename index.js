@@ -46,8 +46,8 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-    
    
+    const userCollection = client.db('DaignoDb').collection('users');
     // auth related api
     app.post('/jwt', async (req, res) => {
       const user = req.body
@@ -78,6 +78,19 @@ async function run() {
       }
     });
 
+    // user collection
+
+app.get('/users', async(req, res)=>{
+  const result = await userCollection.find().toArray();
+  res.send(result)
+})
+
+
+  app.post('/users', async(req, res) =>{
+    const user = req.body;
+    const result = await userCollection.insertOne(user);
+    res.send(result)
+  })
 
 
     // Send a ping to confirm a successful connection
@@ -92,9 +105,9 @@ async function run() {
 run().catch(console.dir)
 
 app.get('/', (req, res) => {
-  res.send('Hello from StayVista Server..')
+  res.send('Hello from DiagnoSage Server..')
 })
 
 app.listen(port, () => {
-  console.log(`StayVista is running on port ${port}`)
+  console.log(`DiagnoSage is running on port ${port}`)
 })
