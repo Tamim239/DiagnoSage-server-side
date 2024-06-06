@@ -46,7 +46,7 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-   
+
     const userCollection = client.db('DaignoDb').collection('users');
     // auth related api
     app.post('/jwt', async (req, res) => {
@@ -79,18 +79,32 @@ async function run() {
     });
 
     // user collection
+    app.get('/users', async (req, res) => {
+      const result = await userCollection.find().toArray();
+      res.send(result)
+    });
 
-app.get('/users', async(req, res)=>{
-  const result = await userCollection.find().toArray();
-  res.send(result)
-})
 
+    app.post('/users', async (req, res) => {
+      const user = req.body;
+      const result = await userCollection.insertOne(user);
+      res.send(result)
+    });
 
-  app.post('/users', async(req, res) =>{
-    const user = req.body;
-    const result = await userCollection.insertOne(user);
-    res.send(result)
-  })
+// admin set
+    app.get('/user/admin/:email', verifyToken, async(req, res) =>{
+      const email = req.params.email;
+      if(email !== req.decoded.email){
+        return res.status(403).send({message: 'unauthorized access'})
+      }
+      const query = {email: email}
+      const user = await userCollection.findOne(query);
+      let admin = false;
+      if(user){
+        admin = user?.role === 'admin';
+      }
+      res.send({admin})
+    });
 
 
     // Send a ping to confirm a successful connection
