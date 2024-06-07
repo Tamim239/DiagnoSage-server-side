@@ -8,7 +8,7 @@ const port = process.env.PORT || 5000
 
 // middleware
 const corsOptions = {
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'https://diagnosage.netlify.app'],
   credentials: true,
   optionSuccessStatus: 200,
 }
@@ -53,7 +53,6 @@ const client = new MongoClient(uri, {
 
 async function run() {
   try {
-
     const userCollection = client.db('DaignoDb').collection('users');
     const bannerCollection = client.db('DaignoDb').collection('banners');
     const testCollection = client.db('DaignoDb').collection('tests');
@@ -78,6 +77,14 @@ async function run() {
     });
 
     // user collection
+app.get('/users/:email', async(req, res)=>{
+  const email = req.params.email;
+  const query = {email: email};
+  console.log(email, query)
+  const result = await userCollection.findOne(query);
+  res.send(result)
+})
+
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
       res.send(result)
@@ -141,6 +148,18 @@ app.get('/tests/:id', async(req, res) =>{
       const test = req.body;
       const result = await testCollection.insertOne(test);
       res.send(result);
+    });
+
+    app.put('/tests/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const doc = {
+        $inc:{
+          slots: -1
+        }
+      }
+      const result = await testCollection.updateOne(filter, doc);
+      res.send(result)
     })
 
     // Send a ping to confirm a successful connection
