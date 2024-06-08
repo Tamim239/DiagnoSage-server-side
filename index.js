@@ -96,6 +96,22 @@ app.get('/users/:email', async(req, res)=>{
       res.send(result)
     });
 
+    app.put('/users/:id', async(req, res)=>{
+      const user = req.body;
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)}
+      const options = {upsert: true}
+      const updateDoc ={
+        $set:{
+          ...user
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc, options)
+      res.send(result)
+    } )
+
+  
+
     // admin set
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
