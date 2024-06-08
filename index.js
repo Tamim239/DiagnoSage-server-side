@@ -77,13 +77,13 @@ async function run() {
     });
 
     // user collection
-app.get('/users/:email', async(req, res)=>{
-  const email = req.params.email;
-  const query = {email: email};
-  console.log(email, query)
-  const result = await userCollection.findOne(query);
-  res.send(result)
-})
+    app.get('/users/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { email: email };
+      console.log(email, query)
+      const result = await userCollection.findOne(query);
+      res.send(result)
+    })
 
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
@@ -96,21 +96,21 @@ app.get('/users/:email', async(req, res)=>{
       res.send(result)
     });
 
-    app.put('/users/:id', async(req, res)=>{
+    app.put('/users/:id', async (req, res) => {
       const user = req.body;
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
-      const options = {upsert: true}
-      const updateDoc ={
-        $set:{
+      const filter = { _id: new ObjectId(id) }
+      const options = { upsert: true }
+      const updateDoc = {
+        $set: {
           ...user
         }
       }
       const result = await userCollection.updateOne(filter, updateDoc, options)
       res.send(result)
-    } )
+    })
 
-  
+
 
     // admin set
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
@@ -139,6 +139,20 @@ app.get('/users/:email', async(req, res)=>{
       res.send(result)
     });
 
+    app.put('/banners/:id', async(req, res) =>{
+      const update = req.body;
+      console.log(update)
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)};
+      const updateDoc ={
+        $set: {
+          ...update
+        }
+      }
+      const result = await bannerCollection.updateOne(query, updateDoc);
+      res.send(result)
+    })
+
     app.delete('/banners/:id', async (req, res) => {
       const id = req.params.id;
       console.log(id)
@@ -147,34 +161,53 @@ app.get('/users/:email', async(req, res)=>{
       res.send(result)
     });
 
-    // add test set get delete update
-app.get('/tests', async(req, res)=>{
-  const result = await testCollection.find().toArray();
-  res.send(result);
-});
+    // add tests set get delete update
+    app.get('/tests', async (req, res) => {
+      const result = await testCollection.find().toArray();
+      res.send(result);
+    });
 
-app.get('/tests/:id', async(req, res) =>{
-  const id = req.params.id;
-  const query = {_id: new ObjectId(id)};
-  const result = await testCollection.findOne(query);
-  res.send(result)
-})
+    app.get('/tests/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await testCollection.findOne(query);
+      res.send(result)
+    })
 
     app.post('/tests', async (req, res) => {
       const test = req.body;
       const result = await testCollection.insertOne(test);
       res.send(result);
     });
-
-    app.put('/tests/:id', async(req, res)=>{
+    app.put('/tests/:id', async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)}
+      const filter = { _id: new ObjectId(id) }
       const doc = {
-        $inc:{
+        $inc: {
           slots: -1
         }
       }
       const result = await testCollection.updateOne(filter, doc);
+      res.send(result)
+    });
+
+    app.patch('/tests/:id', async (req, res) => {
+      const test = req.body;
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const doc = {
+        $set: {
+          ...test
+        },
+      }
+      const result = await testCollection.updateOne(filter, doc);
+      res.send(result)
+    });
+
+    app.delete('/tests/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await testCollection.deleteOne(query);
       res.send(result)
     })
 
