@@ -56,6 +56,7 @@ async function run() {
     const userCollection = client.db('DaignoDb').collection('users');
     const bannerCollection = client.db('DaignoDb').collection('banners');
     const testCollection = client.db('DaignoDb').collection('tests');
+    const bookCollection = client.db('DaignoDb').collection('books');
     // auth related api
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -110,8 +111,6 @@ async function run() {
       res.send(result)
     })
 
-
-
     // admin set
     app.get('/user/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
@@ -133,6 +132,7 @@ async function run() {
       res.send(result)
     });
 
+  
     app.post('/banners', async (req, res) => {
       const banner = req.body;
       const result = await bannerCollection.insertOne(banner);
@@ -141,7 +141,6 @@ async function run() {
 
     app.put('/banners/:id', async(req, res) =>{
       const update = req.body;
-      console.log(update)
       const id = req.params.id;
       const query = {_id: new ObjectId(id)};
       const updateDoc ={
@@ -151,7 +150,7 @@ async function run() {
       }
       const result = await bannerCollection.updateOne(query, updateDoc);
       res.send(result)
-    })
+    });
 
     app.delete('/banners/:id', async (req, res) => {
       const id = req.params.id;
@@ -209,7 +208,20 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await testCollection.deleteOne(query);
       res.send(result)
-    })
+    });
+
+      //  save apply data
+      app.post('/bookList', async (req, res) => {
+        const info = req.body;
+        const result = await bookCollection.insertOne(info);
+        const updateDoc = {
+          $inc: { slots: -1 },
+        }
+        const testQuery = { _id: new ObjectId(info._id) }
+        const updateSlots = await testCollection.updateOne(testQuery, updateDoc)
+        console.log(updateSlots)
+        res.send(result)
+      });
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
