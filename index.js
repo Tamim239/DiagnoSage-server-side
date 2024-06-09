@@ -2,6 +2,7 @@ const express = require('express')
 const app = express()
 require('dotenv').config()
 const cors = require('cors')
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb')
 const jwt = require('jsonwebtoken')
 const port = process.env.PORT || 5000
@@ -132,7 +133,14 @@ async function run() {
       res.send(result)
     });
 
-  
+    app.get('/isActive', async (req, res)=>{
+      const result = await bannerCollection.findOne({isActive: 'true'})
+      if(!result){
+        return res.send({message: 'no banner found'})
+      }
+      res.send(result)
+    })
+
     app.post('/banners', async (req, res) => {
       const banner = req.body;
       const result = await bannerCollection.insertOne(banner);
@@ -222,6 +230,21 @@ async function run() {
         console.log(updateSlots)
         res.send(result)
       });
+
+       // stripe payment intent
+    app.post('/create-payment-intent', async(req, res) =>{
+      const {price} = req.body;
+      const amount = parseInt(price * 100);
+
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    });
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
