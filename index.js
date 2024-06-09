@@ -113,7 +113,7 @@ async function run() {
     })
 
     // admin set
-    app.get('/user/admin/:email', verifyToken, async (req, res) => {
+    app.get('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: 'unauthorized access' })
@@ -217,6 +217,14 @@ async function run() {
       const result = await testCollection.deleteOne(query);
       res.send(result)
     });
+    // booking get method
+
+    app.get('/bookList/:email', async(req, res) =>{
+      const email = req.params.email;
+      const query = {email: email}
+      const result = await bookCollection.findOne(query);
+      res.send(result)
+    })
 
       //  save apply data
       app.post('/bookList', async (req, res) => {
@@ -225,7 +233,7 @@ async function run() {
         const updateDoc = {
           $inc: { slots: -1 },
         }
-        const testQuery = { _id: new ObjectId(info._id) }
+        const testQuery = { _id: new ObjectId(info.id) }
         const updateSlots = await testCollection.updateOne(testQuery, updateDoc)
         console.log(updateSlots)
         res.send(result)
@@ -235,12 +243,12 @@ async function run() {
     app.post('/create-payment-intent', async(req, res) =>{
       const {price} = req.body;
       const amount = parseInt(price * 100);
-
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: 'usd',
         payment_method_types: ['card']
       });
+      console.log(paymentIntent)
       res.send({
         clientSecret: paymentIntent.client_secret
       })
