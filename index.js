@@ -16,21 +16,7 @@ const corsOptions = {
 app.use(cors(corsOptions))
 app.use(express.json())
 
-// jwt verify middleware
-const verifyToken = (req, res, next) => {
-  console.log('inside verify token', req.headers.authorization)
-  if (!req.headers.authorization) {
-    return res.status(401).send({ message: 'unauthorized access' });
-  }
-  const token = req.headers.authorization.split(' ')[1];
-  jwt.verify(token, process.env.ACCESS_TOKEN_API, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ message: 'unauthorized access' });
-    }
-    req.decoded = decoded;
-    next()
-  })
-};
+
 
 
 const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.USER_PASS}@cluster0.uj1q2ho.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -50,17 +36,33 @@ async function run() {
     const bookCollection = client.db('DaignoDb').collection('books');
     // auth related api
 
+// jwt verify middleware
+const verifyToken = (req, res, next) => {
+  console.log('inside verify token', req.headers.authorization)
+  if (!req.headers.authorization) {
+    return res.status(401).send({ message: 'unauthorized access' });
+  }
+  const token = req.headers.authorization.split(' ')[1];
+  jwt.verify(token, process.env.ACCESS_TOKEN_API, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: 'unauthorized access' });
+    }
+    req.decoded = decoded;
+    next()
+  })
+};
+
     // verify admin after verifyToken
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
       const query = { email: email };
       const user = await userCollection.findOne(query);
-      const isAdmin = user?.role === 'admin'
+      const isAdmin = user?.role === 'admin';
       if (!isAdmin) {
         return res.status(403).send({ message: 'forbidden access' });
       }
-      next()
-    };
+      next();
+    }
 
     app.post('/jwt', async (req, res) => {
       const user = req.body;
@@ -89,7 +91,7 @@ async function run() {
       res.send(result)
     });
 
-    app.get('/users',  async (req, res) => {
+    app.get('/users', async (req, res) => {
       const role = 'user';
       const query = {role: role}
       const result = await userCollection.find(query).toArray();
@@ -129,30 +131,31 @@ async function run() {
     })
 
     // admin set
-    app.get('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
+    app.get('/users/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
+
       if (email !== req.decoded.email) {
-        return res.status(403).send({ message: 'unauthorized access' })
+        return res.status(403).send({ message: 'forbidden access' })
       }
-      const query = { email: email }
+      const query = { email: email };
       const user = await userCollection.findOne(query);
       let admin = false;
       if (user) {
         admin = user?.role === 'admin';
       }
-      res.send({ admin })
+      res.send({ admin });
     });
     // set admin in role all user then access admin
-    app.patch('/users/admin/:id', verifyToken, verifyAdmin, async(req, res) =>{
+    app.patch('/users/admin/:id', verifyToken, verifyAdmin, async (req, res) => {
       const id = req.params.id;
-      const filter = {_id: new ObjectId(id)};
-      const updateDoc = {
-        $set:{
+      const filter = { _id: new ObjectId(id) };
+      const updatedDoc = {
+        $set: {
           role: 'admin'
         }
       }
-      const result = await userCollection.updateOne(filter, updateDoc);
-      res.send(result)
+      const result = await userCollection.updateOne(filter, updatedDoc);
+      res.send(result);
     })
 
     // added banner info and set get delete
@@ -276,6 +279,19 @@ async function run() {
         }
       }
       const result = await bookCollection.updateOne(query, updateDoc);
+      res.send(result)
+    });
+
+    app.put('/bookListStatus/:id',async(req, res)=>{
+      const id = req.params.id;
+      console.log(id)
+      const query = {_id: new ObjectId(id)};
+      const doc = {
+        $set: {
+          status: 'complete'
+        }
+      }
+      const result = await bookCollection.updateOne(query, doc);
       res.send(result)
     });
 
