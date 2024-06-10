@@ -55,7 +55,6 @@ async function run() {
       const email = req.decoded.email;
       const query = { email: email };
       const user = await userCollection.findOne(query);
-      console.log(user)
       const isAdmin = user?.role === 'admin'
       if (!isAdmin) {
         return res.status(403).send({ message: 'forbidden access' });
@@ -90,8 +89,10 @@ async function run() {
       res.send(result)
     });
 
-    app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
-      const result = await userCollection.find().toArray();
+    app.get('/users',  async (req, res) => {
+      const role = 'user';
+      const query = {role: role}
+      const result = await userCollection.find(query).toArray();
       res.send(result)
     });
 
@@ -113,24 +114,46 @@ async function run() {
       }
       const result = await userCollection.updateOne(filter, updateDoc, options)
       res.send(result)
+    });
+
+    app.put('/usersStatus/:email', async(req, res) =>{
+      const email = req.params.email;
+      const query = {email: email};
+      const updateDoc = {
+        $set: {
+          status: 'blocked'
+        }
+      }
+      const result = await userCollection.updateOne(query, updateDoc)
+      res.send(result)
     })
 
     // admin set
     app.get('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
-      console.log(email)
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: 'unauthorized access' })
       }
       const query = { email: email }
       const user = await userCollection.findOne(query);
-      console.log(user)
       let admin = false;
       if (user) {
         admin = user?.role === 'admin';
       }
       res.send({ admin })
     });
+    // set admin in role all user then access admin
+    app.patch('/users/admin/:id', verifyToken, verifyAdmin, async(req, res) =>{
+      const id = req.params.id;
+      const filter = {_id: new ObjectId(id)};
+      const updateDoc = {
+        $set:{
+          role: 'admin'
+        }
+      }
+      const result = await userCollection.updateOne(filter, updateDoc);
+      res.send(result)
+    })
 
     // added banner info and set get delete
     app.get('/banners', async (req, res) => {
