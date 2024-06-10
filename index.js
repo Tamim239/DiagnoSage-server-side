@@ -30,18 +30,8 @@ const verifyToken = (req, res, next) => {
     req.decoded = decoded;
     next()
   })
-}
-// verify admin after verifyToken
-const verifyAdmin = async (req, res, next) => {
-  const email = req.decoded.email;
-  const query = { email };
-  const user = await userCollection.findOne(query);
-  const isAdmin = user?.role === 'admin'
-  if (!isAdmin) {
-    return res.status(403).send({ message: 'forbidden access' });
-  }
-  next()
-}
+};
+
 
 const uri = `mongodb+srv://${process.env.USER_DB}:${process.env.USER_PASS}@cluster0.uj1q2ho.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 const client = new MongoClient(uri, {
@@ -59,6 +49,20 @@ async function run() {
     const testCollection = client.db('DaignoDb').collection('tests');
     const bookCollection = client.db('DaignoDb').collection('books');
     // auth related api
+
+    // verify admin after verifyToken
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      console.log(user)
+      const isAdmin = user?.role === 'admin'
+      if (!isAdmin) {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next()
+    };
+
     app.post('/jwt', async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_API, { expiresIn: '1h' })
@@ -82,10 +86,9 @@ async function run() {
     app.get('/users/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
-      console.log(email, query)
       const result = await userCollection.findOne(query);
       res.send(result)
-    })
+    });
 
     app.get('/users', verifyToken, verifyAdmin, async (req, res) => {
       const result = await userCollection.find().toArray();
@@ -115,11 +118,13 @@ async function run() {
     // admin set
     app.get('/user/admin/:email', verifyToken, verifyAdmin, async (req, res) => {
       const email = req.params.email;
+      console.log(email)
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: 'unauthorized access' })
       }
       const query = { email: email }
       const user = await userCollection.findOne(query);
+      console.log(user)
       let admin = false;
       if (user) {
         admin = user?.role === 'admin';
@@ -133,10 +138,10 @@ async function run() {
       res.send(result)
     });
 
-    app.get('/isActive', async (req, res)=>{
-      const result = await bannerCollection.findOne({isActive: 'true'})
-      if(!result){
-        return res.send({message: 'no banner found'})
+    app.get('/isActive', async (req, res) => {
+      const result = await bannerCollection.findOne({ isActive: 'true' })
+      if (!result) {
+        return res.send({ message: 'no banner found' })
       }
       res.send(result)
     })
@@ -147,11 +152,11 @@ async function run() {
       res.send(result)
     });
 
-    app.put('/banners/:id', async(req, res) =>{
+    app.put('/banners/:id', async (req, res) => {
       const update = req.body;
       const id = req.params.id;
-      const query = {_id: new ObjectId(id)};
-      const updateDoc ={
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
         $set: {
           ...update
         }
@@ -219,29 +224,41 @@ async function run() {
     });
     // booking get method
 
-    app.get('/bookList/:email', async(req, res) =>{
+    app.get('/bookList/:email', async (req, res) => {
       const email = req.params.email;
-      const query = {email: email}
-      const result = await bookCollection.findOne(query);
+      const query = { email: email }
+      const result = await bookCollection.find(query).toArray();
       res.send(result)
     })
 
-      //  save apply data
-      app.post('/bookList', async (req, res) => {
-        const info = req.body;
-        const result = await bookCollection.insertOne(info);
-        const updateDoc = {
-          $inc: { slots: -1 },
-        }
-        const testQuery = { _id: new ObjectId(info.id) }
-        const updateSlots = await testCollection.updateOne(testQuery, updateDoc)
-        console.log(updateSlots)
-        res.send(result)
-      });
+    //  save apply data
+    app.post('/bookList', async (req, res) => {
+      const info = req.body;
+      const result = await bookCollection.insertOne(info);
+      const updateDoc = {
+        $inc: { slots: -1 },
+      }
+      const testQuery = { _id: new ObjectId(info.oldID) }
+      const updateSlots = await testCollection.updateOne(testQuery, updateDoc)
+      console.log(updateSlots)
+      res.send(result)
+    });
 
-       // stripe payment intent
-    app.post('/create-payment-intent', async(req, res) =>{
-      const {price} = req.body;
+    app.put('/bookList/:id', async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: 'cancel'
+        }
+      }
+      const result = await bookCollection.updateOne(query, updateDoc);
+      res.send(result)
+    });
+
+    // stripe payment intent
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
       const amount = parseInt(price * 100);
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
