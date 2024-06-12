@@ -35,6 +35,7 @@ async function run() {
     const testCollection = client.db('DaignoDb').collection('tests');
     const bookCollection = client.db('DaignoDb').collection('books');
     const promoCollection = client.db('DaignoDb').collection('promotion');
+    const recommandCollection = client.db('DaignoDb').collection('recommand');
     // auth related api
 
 // jwt verify middleware
@@ -318,7 +319,12 @@ const verifyToken = (req, res, next) => {
     app.get('/promotion', async(req, res)=>{
       const result = await promoCollection.find().toArray();
       res.send(result)
-    })
+    });
+
+    app.get('/recommand', async(req, res) =>{
+      const result = await recommandCollection.find().toArray();
+      res.send(result)
+    });
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
