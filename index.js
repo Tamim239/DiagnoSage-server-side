@@ -28,16 +28,6 @@ const client = new MongoClient(uri, {
   },
 })
 
-async function run() {
-  try {
-    const userCollection = client.db('DaignoDb').collection('users');
-    const bannerCollection = client.db('DaignoDb').collection('banners');
-    const testCollection = client.db('DaignoDb').collection('tests');
-    const bookCollection = client.db('DaignoDb').collection('books');
-    const promoCollection = client.db('DaignoDb').collection('promotion');
-    const recommandCollection = client.db('DaignoDb').collection('recommand');
-    // auth related api
-
 // jwt verify middleware
 const verifyToken = (req, res, next) => {
   console.log('inside verify token', req.headers.authorization)
@@ -54,18 +44,51 @@ const verifyToken = (req, res, next) => {
   })
 };
 
+async function run() {
+  try {
+    const userCollection = client.db('DaignoDb').collection('users');
+    const bannerCollection = client.db('DaignoDb').collection('banners');
+    const testCollection = client.db('DaignoDb').collection('tests');
+    const bookCollection = client.db('DaignoDb').collection('books');
+    const promoCollection = client.db('DaignoDb').collection('promotion');
+    const recommandCollection = client.db('DaignoDb').collection('recommand');
+    // auth related api
+
     // verify admin after verifyToken
     const verifyAdmin = async (req, res, next) => {
-      const email = req.decoded.email;
-      const query = { email: email };
-      const user = await userCollection.findOne(query);
-      const isAdmin = user?.role === 'admin';
-      if (!isAdmin) {
-        return res.status(403).send({ message: 'forbidden access' });
+      // const email = req.decoded.email;
+      // const query = { email: email };
+      // const user = await userCollection.findOne(query);
+      // const isAdmin = user?.role === 'admin';
+      // if (!isAdmin) {
+      //   return res.status(403).send({ message: 'forbidden access' });
+      // }
+      // next();
+      try {
+        // Ensure decoded email is present
+        if (!req.decoded || !req.decoded.email) {
+          return res.status(403).send({ message: 'Forbidden access: No email found in token' });
+        }
+    
+        const email = req.decoded.email;
+        const query = { email: email };
+    
+        // Find user by email
+        const user = await userCollection.findOne(query);
+    
+        // Check if user exists and has admin role
+        if (!user || user.role !== 'admin') {
+          return res.status(403).send({ message: 'Forbidden access: Not an admin' });
+        }
+    
+        // Proceed to the next middleware
+        next();
+      } catch (error) {
+        console.error('Error verifying admin:', error);
+        res.status(500).send({ message: 'Internal Server Error' });
       }
-      next();
     }
-
+// create jwt token
     app.post('/jwt', async (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_API, { expiresIn: '1h' })
@@ -135,7 +158,7 @@ const verifyToken = (req, res, next) => {
     // admin set
     app.get('/users/admin/:email', verifyToken, async (req, res) => {
       const email = req.params.email;
-
+     console.log(email)
       if (email !== req.decoded.email) {
         return res.status(403).send({ message: 'forbidden access' })
       }
@@ -195,7 +218,6 @@ const verifyToken = (req, res, next) => {
 
     app.delete('/banners/:id', async (req, res) => {
       const id = req.params.id;
-      console.log(id)
       const query = { _id: new ObjectId(id) };
       const result = await bannerCollection.deleteOne(query);
       res.send(result)
@@ -272,7 +294,6 @@ const verifyToken = (req, res, next) => {
       }
       const testQuery = { _id: new ObjectId(info.oldID) }
       const updateSlots = await testCollection.updateOne(testQuery, updateDoc)
-      console.log(updateSlots)
       res.send(result)
     });
 
@@ -290,7 +311,6 @@ const verifyToken = (req, res, next) => {
 
     app.put('/bookListStatus/:id',async(req, res)=>{
       const id = req.params.id;
-      console.log(id)
       const query = {_id: new ObjectId(id)};
       const doc = {
         $set: {
@@ -310,7 +330,6 @@ const verifyToken = (req, res, next) => {
         currency: 'usd',
         payment_method_types: ['card']
       });
-      console.log(paymentIntent)
       res.send({
         clientSecret: paymentIntent.client_secret
       })
