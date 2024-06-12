@@ -34,6 +34,7 @@ async function run() {
     const bannerCollection = client.db('DaignoDb').collection('banners');
     const testCollection = client.db('DaignoDb').collection('tests');
     const bookCollection = client.db('DaignoDb').collection('books');
+    const promoCollection = client.db('DaignoDb').collection('promotion');
     // auth related api
 
 // jwt verify middleware
@@ -250,6 +251,10 @@ const verifyToken = (req, res, next) => {
     });
     // booking get method
 
+    app.get('/bookList', async(req, res) =>{
+      const result = await bookCollection.find().toArray();
+      res.send(result)
+    });
     app.get('/bookList/:email', async (req, res) => {
       const email = req.params.email;
       const query = { email: email }
@@ -309,6 +314,11 @@ const verifyToken = (req, res, next) => {
         clientSecret: paymentIntent.client_secret
       })
     });
+    // promotion data;
+    app.get('/promotion', async(req, res)=>{
+      const result = await promoCollection.find().toArray();
+      res.send(result)
+    })
 
     // Send a ping to confirm a successful connection
     await client.db('admin').command({ ping: 1 })
