@@ -228,6 +228,18 @@ async function run() {
       const result = await testCollection.find().toArray();
       res.send(result);
     });
+    app.get('/dateTests', async (req, res) => {
+      const today = new Date().toLocaleDateString();
+      const result = await testCollection.find({testDate: { $gte: today }}).toArray();
+      res.send(result);
+    });
+    app.get('/filterDate', async (req, res) => {
+      const searchDate = req.query.searchDate;
+      const today = new Date().toLocaleDateString();
+      const result = await testCollection.find({testDate: { $gte: today , $lte: searchDate}}).toArray();
+      console.log(result)
+      res.send(result);
+    });
 
     app.get('/tests/:id', async (req, res) => {
       const id = req.params.id;
