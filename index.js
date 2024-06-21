@@ -333,6 +333,29 @@ async function run() {
       res.send(result)
     });
 
+    app.patch('/pdfLink/:id', async (req, res) =>{
+      const pdfLink = req.body;
+      const id = req.params.id;
+      const query = {_id: new ObjectId(id)}
+      const options = {upsert: true}
+      const doc = {
+        $set: {
+         ...pdfLink
+        }
+      }
+      const result = await 
+      bookCollection.updateOne(query, doc, options);
+      res.send(result)
+    });
+
+
+    app.get('/searchEmail/:email', async(req, res)=>{
+      const email = req.params.email;
+      const query = {email}
+      const result = await bookCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // stripe payment intent
     app.post('/create-payment-intent', async (req, res) => {
       const { price } = req.body;
